@@ -1,2 +1,5 @@
 influx/influxdb2-config/*
 influx/influxdb2-data/*
+
+!influx/influxdb2-config/dummy.txt
+!influx/influxdb2-data/dummy.txt
