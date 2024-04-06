@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   iots-influxdb:
     image: influxdb:2
@@ -20,8 +18,6 @@ services:
       - DOCKER_INFLUXDB_INIT_RETENTION=0
     networks:
       - iots-bridge
-
-  # ...
 
 networks:
   iots-bridge:
