@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  iots-influxdb:
+    image: influxdb:2
+    container_name: iots-influxdb
+    ports:
+      - "8086:8086"
+    volumes:
+      - ./influx/influxdb2-data:/var/lib/influxdb2
+      - ./influx/influxdb2-config:/etc/influxdb2
+      - ./influx/environmental_sensor_telemetry_data.csv:/environmental_sensor_telemetry_data.csv
+      - ./influx/scripts:/docker-entrypoint-initdb.d
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=mihajlo
+      - DOCKER_INFLUXDB_INIT_PASSWORD=iotsiotsiots
+      - DOCKER_INFLUXDB_INIT_ORG=IoTSOrg
+      - DOCKER_INFLUXDB_INIT_BUCKET=EnvironmentalSensorTelemetry
+      - DOCKER_INFLUXDB_INIT_RETENTION=0
+    networks:
+      - iots-bridge
+
+  # ...
+
+networks:
+  iots-bridge:
+    name: iots_bridge
