@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+option csharp_namespace = "EnvironmentalSensorTelemetry";
+
+import "google/protobuf/empty.proto";
+
+package environmental_sensor_telemetry;
+
+// The greeting service definition.
+service EnvironmentalSensorTelemetry {
+  // If all is well, returns "Pong!" string as a response.
+  rpc Ping (google.protobuf.Empty) returns (PingResponse);
+}
+
+// Auxiliary types
+
+message EnvironmentalSensorTelemetryData {
+  string device = 1;
+  double carbon_oxide = 2;
+  double humidity = 3;
+  bool light = 4;
+  double liquid_petroleum_gas = 5;
+  bool motion = 6;
+  double smoke = 7;
+  double temperature = 8;
+}
+
+message ResponseMetadata {
+  int32 status_code = 1;
+  string message = 2;
+}
+
+// Request types
+
+// Response types
+
+message PingResponse {
+  string pong = 1;
+  ResponseMetadata metadata = 2;
+}
