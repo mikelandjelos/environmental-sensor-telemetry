@@ -1,11 +1,11 @@
 syntax = "proto3";
+package environmental_sensor_telemetry;
 
 option csharp_namespace = "EnvironmentalSensorTelemetry";
 
 import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 
-package environmental_sensor_telemetry;
 
 // The greeting service definition.
 service EnvironmentalSensorTelemetry {
