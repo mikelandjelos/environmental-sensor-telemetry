@@ -1,12 +1,18 @@
 using EnvironmentalSensorTelemetry.Services;
 using app.Services;
+using app.Interceptors;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddGrpc();
+builder.Services.AddGrpc().AddServiceOptions<EnvironmentalSensorTelemetryService>(options =>
+{
+    options.Interceptors.Add<ServerLoggerInterceptor>();
+});
 builder.Services.AddGrpcReflection(); // For development purposes (Postman)
+
 builder.Services.AddSingleton<InfluxDBService>(); // For InfluxDBService DI
+builder.Services.AddSingleton<ServerLoggerInterceptor>();
 
 var app = builder.Build();
 

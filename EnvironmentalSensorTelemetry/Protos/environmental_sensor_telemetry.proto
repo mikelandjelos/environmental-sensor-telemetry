@@ -3,6 +3,7 @@ syntax = "proto3";
 option csharp_namespace = "EnvironmentalSensorTelemetry";
 
 import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
 
 package environmental_sensor_telemetry;
 
@@ -10,6 +11,12 @@ package environmental_sensor_telemetry;
 service EnvironmentalSensorTelemetry {
   // If all is well, returns "Pong!" string as a response.
   rpc Ping (google.protobuf.Empty) returns (PingResponse);
+
+  // Batch write.
+  rpc WriteMeasurementsBatched(WriteBatchRequest) returns (WriteDataResponse);
+  
+  // Stream write.
+  rpc WriteMeasurementsStream(stream EnvironmentalSensorTelemetryData) returns (stream WriteDataResponse);
 }
 
 // Auxiliary types
@@ -32,9 +39,18 @@ message ResponseMetadata {
 
 // Request types
 
+message WriteBatchRequest {
+  repeated EnvironmentalSensorTelemetryData data = 1;
+}
+
 // Response types
 
 message PingResponse {
   string pong = 1;
+  ResponseMetadata metadata = 2;
+}
+
+message WriteDataResponse {
+  google.protobuf.Timestamp written_at = 1;
   ResponseMetadata metadata = 2;
 }

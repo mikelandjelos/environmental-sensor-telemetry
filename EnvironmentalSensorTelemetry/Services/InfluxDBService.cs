@@ -14,7 +14,7 @@ public class InfluxDBService
         if (string.IsNullOrEmpty(configFilePath))
             throw new ConfigurationErrorsException("InfluxDB:ConfigFilePath missing from appsettings.json");
 
-        using(StreamReader reader = File.OpenText(configFilePath))
+        using (StreamReader reader = File.OpenText(configFilePath))
         {
             TomlTable influxConfigs = TOML.Parse(reader);
             _token = influxConfigs["default"]["token"].AsString;
