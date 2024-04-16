@@ -17,6 +17,8 @@ public class InfluxDBService
 
     private readonly string _defaultBucket;
 
+    public string DefaultBucket => _defaultBucket;
+
     public InfluxDBService(IConfiguration configuration)
     {
         // Loading configured token and url from configuration files.

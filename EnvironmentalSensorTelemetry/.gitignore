@@ -31,6 +31,6 @@ obj/
 
 # End of https://www.toptal.com/developers/gitignore/api/dotnetcore,visualstudiocode
 
-InfluxDBConfig/*
+InfluxDB/Config/*
 
-!InfluxDBConfig/dummy.txt
+!InfluxDB/Config/dummy.txt

@@ -2,8 +2,8 @@ using InfluxDB.Client.Core;
 
 namespace app.Models;
 
-[Measurement("est_data")]
-public class EnvironmentalSensorTelemetryData
+[Measurement("sensor_data")]
+public class SensorData
 {
     [Column("timestamp", IsTimestamp = true)] public DateTime Timestamp { get; init; }
     [Column("device", IsTag = true)] public string? Device { get; init; }

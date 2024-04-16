@@ -82,14 +82,14 @@ public class ServerLoggerInterceptor : Interceptor
         where TResponse : class
     {
         _logger.LogInformation($"Starting call. Type: {methodType}. Request: {typeof(TRequest)}. Response: {typeof(TResponse)}");
-        WriteMetadata(context.RequestHeaders, "caller-user");
-        WriteMetadata(context.RequestHeaders, "caller-machine");
-        WriteMetadata(context.RequestHeaders, "caller-os");
+        // WriteMetadata(context.RequestHeaders, "caller-user");
+        // WriteMetadata(context.RequestHeaders, "caller-machine");
+        // WriteMetadata(context.RequestHeaders, "caller-os");
 
-        void WriteMetadata(Metadata headers, string key)
-        {
-            var headerValue = headers.GetValue(key) ?? "(unknown)";
-            _logger.LogInformation($"{key}: {headerValue}");
-        }
+        // void WriteMetadata(Metadata headers, string key)
+        // {
+        //     var headerValue = headers.GetValue(key) ?? "(unknown)";
+        //     _logger.LogInformation($"{key}: {headerValue}");
+        // }
     }
 }
