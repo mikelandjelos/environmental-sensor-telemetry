@@ -6,6 +6,7 @@ option csharp_namespace = "EnvironmentalSensorTelemetry";
 import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/struct.proto";
+import "google/protobuf/duration.proto";
 
 // The greeting service definition.
 service EnvironmentalSensorTelemetry {
@@ -24,8 +25,11 @@ service EnvironmentalSensorTelemetry {
   // Read singular fields over time span.
   rpc ReadFieldsOverTimeSpan(ReadFieldsOverTimeSpanRequest) returns (ReadFieldsOverTimeSpanResponse);
 
-  // Aggregate values over time span.
-  rpc AggregateOverTimeSpan(AggregateOverTimeSpanRequest) returns (AggregateOverTimeSpanResponse);
+  // Aggregate values over period.
+  rpc AggregateOverPeriod(AggregateOverPeriodRequest) returns (AggregateOverPeriodResponse);
+
+  // Aggregate values over multiple periods.
+  rpc AggregateOverWindows(AggregateOverWindowsRequest) returns (AggregateOverWindowsResponse);
 }
 
 // Auxiliary types
@@ -59,9 +63,10 @@ message PaginationInfo {
 }
 
 enum AggregationType {
-  MIN = 0;
-  MAX = 1;
-  AVG = 2;
+  NIL = 0;
+  MIN = 1;
+  MAX = 2;
+  MEAN = 3;
   SUM = 4;
 }
 
@@ -102,14 +107,32 @@ message ReadFieldsOverTimeSpanResponse {
   ResponseMetadata metadata = 2;
 }
 
-message AggregateOverTimeSpanRequest {
+message AggregateOverPeriodRequest {
   google.protobuf.Timestamp start_time = 1;
   google.protobuf.Timestamp stop_time = 2;
   string field_name = 3;
   AggregationType aggregation_type = 4;
 }
 
-message AggregateOverTimeSpanResponse {
-  double result = 1;
+message AggregateOverPeriodResponse {
+  double value = 1;
+  ResponseMetadata metadata = 2;
+}
+
+message AggregateOverWindowsRequest {
+  google.protobuf.Timestamp start_time = 1;
+  google.protobuf.Timestamp stop_time = 2;
+  string field_name = 3;
+  google.protobuf.Duration window_duration = 4;
+  AggregationType aggregation_type = 5;
+}
+
+message AggregateOverWindowsResponse {
+  message AggregateWindow {
+    google.protobuf.Timestamp start = 1;
+    google.protobuf.Timestamp stop = 2;
+    double value = 3;
+  }
+  repeated AggregateWindow aggregate_windows = 1;
   ResponseMetadata metadata = 2;
 }

@@ -5,7 +5,7 @@ using System.Net;
 using InfluxDB.Client.Api.Domain;
 using app.Models;
 using System.Reactive.Linq;
-using InfluxDB.Client.Core.Exceptions;
+using NodaTime;
 
 namespace EnvironmentalSensorTelemetry.Services;
 
@@ -142,26 +142,70 @@ public class EnvironmentalSensorTelemetryService : EnvironmentalSensorTelemetry.
         return Task.CompletedTask;
     }
 
+    /// <summary>
+    /// - Example query:
+    /// 
+    /// ```flux
+    ///  from(bucket: "EnvironmentalSensorTelemetry")
+    ///      |> range(start: time(v: "2024-04-15T10:57:40.637Z"), stop: time(v: "2024-04-16T10:57:47.652Z"))
+    ///      |> pivot(rowKey: ["_time"], columnKey: ["_field"], valueColumn: "_value")	
+    ///      |> limit(n: 2, offset: 1)
+    /// ```
+    /// - Example response:
+    /// 
+    /// ```json
+    ///  {
+    ///      "records": [
+    ///          {
+    ///              "timestamp": "2024-04-16T07:26:25.828Z",
+    ///              "device": "c8:94:02:0e:fd:97",
+    ///              "carbon_oxide": 0.1,
+    ///              "humidity": 0.1,
+    ///              "light": true,
+    ///              "liquid_petroleum_gas": 0.1,
+    ///              "motion": true,
+    ///              "smoke": 0.1,
+    ///              "temperature": 0.1
+    ///          },
+    ///          {
+    ///              "timestamp": "2024-04-16T07:26:56.625Z",
+    ///              "device": "c8:94:02:0e:fd:97",
+    ///              "carbon_oxide": 0.11,
+    ///              "humidity": 0.11,
+    ///              "light": true,
+    ///              "liquid_petroleum_gas": 0.11,
+    ///              "motion": true,
+    ///              "smoke": 0.11,
+    ///              "temperature": 0.11
+    ///          }
+    ///      ],
+    ///      "metadata": {
+    ///          "status_code": 200,
+    ///          "message": "Succesfully read 2 records, from 4/15/2024 10:57:40 AM, to 4/16/2024 10:57:47 AM"
+    ///      }
+    /// }
+    /// ```
+    /// </summary>
     public override async Task<ReadMeasurementsOverTimeSpanResponse> ReadMeasurementsOverTimeSpan(ReadMeasurementsOverTimeSpanRequest request, ServerCallContext context)
     {
         try
         {
+            if (request.StartTime == null)
+                throw new ArgumentException("Start time must be provided!");
+
             // Flux query can be injected with malicious strings - its "SQL" injection prone.
-            string stopTime = request.StopTime != null ? $", stop: time(v: {request.StopTime.ToDateTime().ToTimestamp()})" : string.Empty;
+            string stopTime = request.StopTime != null ? $", stop: time(v: {request.StopTime.ToDateTime().ToTimestamp()})\n" : string.Empty;
             string pagination = request.PaginationInfo != null && request.PaginationInfo.PageSize > 0 && request.PaginationInfo.Offset >= 0 ?
                 $"\t|> limit(n: {request.PaginationInfo.PageSize}, offset: {request.PaginationInfo.Offset})\n" : string.Empty;
 
             var query = string.Join("",
                 $"from(bucket: \"{_influxDBService.DefaultBucket}\")\n",
                 $"\t|> range(start: time(v: {request.StartTime.ToDateTime().ToTimestamp()}){stopTime})\n",
-                $"\t|> pivot(rowKey: [\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")",
+                $"\t|> pivot(rowKey: [\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n",
                 pagination);
 
             var fluxTables = await _influxDBService.QueryAsync(queryApi => queryApi.QueryAsync(query));
             var records = new List<EnvironmentalSensorTelemetryData>();
-
-            _logger.LogInformation(query);
-            _logger.LogInformation(fluxTables.Sum(fluxTable => fluxTable.Records.Count).ToString());
 
             records = fluxTables.SelectMany(fluxTable =>
                 fluxTable.Records.Select(record =>
@@ -202,12 +246,53 @@ public class EnvironmentalSensorTelemetryService : EnvironmentalSensorTelemetry.
         }
     }
 
+    /// <summary>
+    /// 
+    /// - Example query:
+    /// 
+    /// ```flux
+    ///  from(bucket: "EnvironmentalSensorTelemetry")
+    ///      |> range(start: time(v: "2024-04-15T10:54:22.730Z"), stop: time(v: "2024-04-16T10:54:31.314Z"))
+    ///      |> filter(fn: (r) => r._field == "carbon_oxide")
+    ///      |> limit(n: 3, offset: 1)
+    /// ```
+    /// - Example response:
+    /// 
+    /// ```json
+    /// {
+    ///     "records": [
+    ///         {
+    ///             "field_name": "carbon_oxide",
+    ///             "timestamp": "2024-04-16T07:26:25.828Z",
+    ///             "value": 0.1
+    ///         },
+    ///         {
+    ///             "field_name": "carbon_oxide",
+    ///             "timestamp": "2024-04-16T07:26:56.625Z",
+    ///             "value": 0.11
+    ///         },
+    ///         {
+    ///             "field_name": "carbon_oxide",
+    ///             "timestamp": "2024-04-16T07:27:28.425Z",
+    ///             "value": 0.12
+    ///         }
+    ///     ],
+    ///     "metadata": {
+    ///         "status_code": 200,
+    ///         "message": "Succesfully read 3 records, from 4/15/2024 10:54:22 AM, to 4/16/2024 10:54:31 AM"
+    ///     }
+    /// }
+    /// ```
+    /// </summary>
     public override async Task<ReadFieldsOverTimeSpanResponse> ReadFieldsOverTimeSpan(ReadFieldsOverTimeSpanRequest request, ServerCallContext context)
     {
         try
         {
+            if (request.StartTime == null)
+                throw new ArgumentException("Start time must be provided!");
+
             // Flux query can be injected with malicious strings - its "SQL" injection prone.
-            string stopTime = request.StopTime != null ? $", stop: time(v: {request.StopTime.ToDateTime().ToTimestamp()})" : string.Empty;
+            string stopTime = request.StopTime != null ? $", stop: time(v: {request.StopTime.ToDateTime().ToTimestamp()})\n" : string.Empty;
             string filter = request.HasFieldName ? $"\t|> filter(fn: (r) => r._field == \"{request.FieldName}\")\n" : string.Empty;
             string pagination = request.PaginationInfo != null && request.PaginationInfo.PageSize > 0 && request.PaginationInfo.Offset >= 0 ?
                 $"\t|> limit(n: {request.PaginationInfo.PageSize}, offset: {request.PaginationInfo.Offset})\n" : string.Empty;
@@ -256,8 +341,94 @@ public class EnvironmentalSensorTelemetryService : EnvironmentalSensorTelemetry.
         }
     }
 
-    public override Task<AggregateOverTimeSpanResponse> AggregateOverTimeSpan(AggregateOverTimeSpanRequest request, ServerCallContext context)
+    /// <summary>
+    /// - Example query executed:
+    /// ```flux
+    /// from(bucket: "EnvironmentalSensorTelemetry")
+    ///     |> range(start: time(v: "2020-07-12T02:01:34.385975Z"), stop: time(v: "2020-07-20T02:03:37.264313Z"))
+    ///     |> filter(fn: (r) => r._field == "carbon_oxide")
+    ///     |> window(every: 1d)
+    ///     |> mean()
+    ///     |> group(columns: ["device"])
+    /// ```
+    /// - Example response:
+    /// 
+    /// ```json
+    /// {
+    //      "aggregate_windows": [
+    //          {
+    //              "start": "2024-04-16T07:00:00Z",
+    //              "stop": "2024-04-16T08:00:00Z",
+    //              "result": 0.105
+    //          }
+    //      ],
+    //      "metadata": {
+    //          "status_code": 200,
+    //          "message": "Succesfully aggregated Mean values over 1 windows!"
+    //      }
+    //  }
+    /// ``` 
+    /// </summary>
+    public override async Task<AggregateOverWindowsResponse> AggregateOverWindows(AggregateOverWindowsRequest request, ServerCallContext context)
     {
-        throw new MethodNotAllowedException("AggregateOverTimeSpan");
+        try
+        {
+            if (request.StartTime == null)
+                throw new ArgumentException("Start time must be provided!");
+
+            if (request.StopTime == null)
+                throw new ArgumentException("Stop time must be provided!");
+
+            if (string.IsNullOrEmpty(request.FieldName))
+                throw new ArgumentException("Field name must be provided!");
+
+            if (request.AggregationType == AggregationType.Nil)
+                throw new ArgumentException($"Aggregation type must be one of the following: {string.Join(", ", System.Enum.GetNames<AggregationType>()).Replace("Nil, ", string.Empty)}");
+
+            var query = string.Join(string.Empty,
+                $"from(bucket: \"{_influxDBService.DefaultBucket}\")\n",
+                $"\t|> range(start: time(v: {request.StartTime.ToDateTime().ToTimestamp()}), stop: time(v: {request.StopTime.ToDateTime().ToTimestamp()}))\n",
+                $"\t|> filter(fn: (r) => r._field == \"{request.FieldName}\")\n",
+                $"\t|> window(every: {request.WindowDuration.Seconds}s)\n",
+                $"\t|> {request.AggregationType.ToString().ToLower()}()\n",
+                $"\t|> group(columns: [\"device\"])\n"
+            );
+
+            var aggregateResult = await _influxDBService.QueryAsync(async queryApi => await queryApi.QueryAsync(query));
+
+            var aggregateWindows = aggregateResult.SelectMany(fluxTable => fluxTable.Records.Select(record => new AggregateOverWindowsResponse.Types.AggregateWindow
+            {
+                Start = Timestamp.FromDateTime(record.GetStart()!.Value.ToDateTimeUtc()),
+                Stop = Timestamp.FromDateTime(record.GetStop()!.Value.ToDateTimeUtc()),
+                Value = (double)record.GetValue(),
+            })).ToList();
+
+            return new AggregateOverWindowsResponse
+            {
+                AggregateWindows = { aggregateWindows },
+                Metadata = new ResponseMetadata
+                {
+                    Message = $"Succesfully aggregated {System.Enum.GetName(request.AggregationType)} values over {aggregateWindows.Count} windows!",
+                    StatusCode = (int)HttpStatusCode.OK,
+                }
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Exception occurred while executing method '{context.Method}' at {DateTime.UtcNow}:\n{ex.StackTrace}");
+            return new AggregateOverWindowsResponse
+            {
+                Metadata = new ResponseMetadata
+                {
+                    Message = "Internal server error",
+                    StatusCode = (int)HttpStatusCode.InternalServerError
+                }
+            };
+        }
+    }
+
+    public override async Task<AggregateOverPeriodResponse> AggregateOverPeriod(AggregateOverPeriodRequest request, ServerCallContext context)
+    {
+        throw new NotImplementedException("AggregateOverPeriod");
     }
 }
