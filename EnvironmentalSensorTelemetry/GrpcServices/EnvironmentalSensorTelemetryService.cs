@@ -5,16 +5,15 @@ using System.Net;
 using InfluxDB.Client.Api.Domain;
 using app.Models;
 using System.Reactive.Linq;
-using NodaTime;
 
 namespace EnvironmentalSensorTelemetry.Services;
 
 public class EnvironmentalSensorTelemetryService : EnvironmentalSensorTelemetry.EnvironmentalSensorTelemetryBase
 {
     private readonly ILogger<EnvironmentalSensorTelemetryService> _logger;
-    private readonly InfluxDBService _influxDBService;
+    private readonly InfluxDBApiFactoryService _influxDBService;
 
-    public EnvironmentalSensorTelemetryService(ILogger<EnvironmentalSensorTelemetryService> logger, InfluxDBService influxDBService)
+    public EnvironmentalSensorTelemetryService(ILogger<EnvironmentalSensorTelemetryService> logger, InfluxDBApiFactoryService influxDBService)
     {
         _logger = logger;
         _influxDBService = influxDBService;
@@ -351,6 +350,14 @@ public class EnvironmentalSensorTelemetryService : EnvironmentalSensorTelemetry.
     ///     |> mean()
     ///     |> group(columns: ["device"])
     /// ```
+    /// - Raw request payload:
+    /// {
+    ///     "startTime": "2020-07-12T02:01:34.385Z",
+    ///     "stopTime": "2020-07-20T02:03:37.264Z",
+    ///     "fieldName": "carbon_oxide",
+    ///     "windowDuration": "86400.000000000s",
+    ///     "aggregationType": "MEAN"
+    /// }
     /// - Example response:
     /// 
     /// ```json
@@ -369,7 +376,7 @@ public class EnvironmentalSensorTelemetryService : EnvironmentalSensorTelemetry.
     //  }
     /// ``` 
     /// </summary>
-    public override async Task<AggregateOverWindowsResponse> AggregateOverWindows(AggregateOverWindowsRequest request, ServerCallContext context)
+    public override async Task<AggregateOverTimeSpanResponse> AggregateOverTimeSpan(AggregateOverTimeSpanRequest request, ServerCallContext context)
     {
         try
         {
@@ -396,14 +403,15 @@ public class EnvironmentalSensorTelemetryService : EnvironmentalSensorTelemetry.
 
             var aggregateResult = await _influxDBService.QueryAsync(async queryApi => await queryApi.QueryAsync(query));
 
-            var aggregateWindows = aggregateResult.SelectMany(fluxTable => fluxTable.Records.Select(record => new AggregateOverWindowsResponse.Types.AggregateWindow
+            var aggregateWindows = aggregateResult.SelectMany(fluxTable => fluxTable.Records.Select(record => new AggregateOverTimeSpanResponse.Types.AggregateWindow
             {
                 Start = Timestamp.FromDateTime(record.GetStart()!.Value.ToDateTimeUtc()),
                 Stop = Timestamp.FromDateTime(record.GetStop()!.Value.ToDateTimeUtc()),
                 Value = (double)record.GetValue(),
+                Device = (string)record.GetValueByKey("device"),
             })).ToList();
 
-            return new AggregateOverWindowsResponse
+            return new AggregateOverTimeSpanResponse
             {
                 AggregateWindows = { aggregateWindows },
                 Metadata = new ResponseMetadata
@@ -416,7 +424,7 @@ public class EnvironmentalSensorTelemetryService : EnvironmentalSensorTelemetry.
         catch (Exception ex)
         {
             _logger.LogError($"Exception occurred while executing method '{context.Method}' at {DateTime.UtcNow}:\n{ex.StackTrace}");
-            return new AggregateOverWindowsResponse
+            return new AggregateOverTimeSpanResponse
             {
                 Metadata = new ResponseMetadata
                 {
@@ -427,8 +435,37 @@ public class EnvironmentalSensorTelemetryService : EnvironmentalSensorTelemetry.
         }
     }
 
-    public override async Task<AggregateOverPeriodResponse> AggregateOverPeriod(AggregateOverPeriodRequest request, ServerCallContext context)
+    public override async Task<DeleteForTimeSpanResponse> DeleteForTimeSpan(DeleteForTimeSpanRequest request, ServerCallContext context)
     {
-        throw new NotImplementedException("AggregateOverPeriod");
+        try
+        {
+            await _influxDBService.DeleteAsync(async deleteApi => await deleteApi.Delete(
+                request.StartTime.ToDateTime(),
+                request.StopTime.ToDateTime(),
+                $"device=\"{request.Device}\"",
+                _influxDBService.DefaultBucket,
+                _influxDBService.DefaultOrganization));
+
+            return new DeleteForTimeSpanResponse
+            {
+                Metadata = new ResponseMetadata
+                {
+                    Message = "Successful deletion.",
+                    StatusCode = (int)HttpStatusCode.OK,
+                }
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Exception occurred while executing method '{context.Method}' at {DateTime.UtcNow}:\n{ex.StackTrace}");
+            return new DeleteForTimeSpanResponse
+            {
+                Metadata = new ResponseMetadata
+                {
+                    Message = "Internal server error",
+                    StatusCode = (int)HttpStatusCode.InternalServerError
+                }
+            };
+        }
     }
 }

@@ -25,11 +25,11 @@ service EnvironmentalSensorTelemetry {
   // Read singular fields over time span.
   rpc ReadFieldsOverTimeSpan(ReadFieldsOverTimeSpanRequest) returns (ReadFieldsOverTimeSpanResponse);
 
-  // Aggregate values over period.
-  rpc AggregateOverPeriod(AggregateOverPeriodRequest) returns (AggregateOverPeriodResponse);
-
   // Aggregate values over multiple periods.
-  rpc AggregateOverWindows(AggregateOverWindowsRequest) returns (AggregateOverWindowsResponse);
+  rpc AggregateOverTimeSpan(AggregateOverTimeSpanRequest) returns (AggregateOverTimeSpanResponse);
+
+  // Delete points over a timespan.
+  rpc DeleteForTimeSpan(DeleteForTimeSpanRequest) returns (DeleteForTimeSpanResponse);
 }
 
 // Auxiliary types
@@ -107,19 +107,7 @@ message ReadFieldsOverTimeSpanResponse {
   ResponseMetadata metadata = 2;
 }
 
-message AggregateOverPeriodRequest {
-  google.protobuf.Timestamp start_time = 1;
-  google.protobuf.Timestamp stop_time = 2;
-  string field_name = 3;
-  AggregationType aggregation_type = 4;
-}
-
-message AggregateOverPeriodResponse {
-  double value = 1;
-  ResponseMetadata metadata = 2;
-}
-
-message AggregateOverWindowsRequest {
+message AggregateOverTimeSpanRequest {
   google.protobuf.Timestamp start_time = 1;
   google.protobuf.Timestamp stop_time = 2;
   string field_name = 3;
@@ -127,12 +115,23 @@ message AggregateOverWindowsRequest {
   AggregationType aggregation_type = 5;
 }
 
-message AggregateOverWindowsResponse {
+message AggregateOverTimeSpanResponse {
   message AggregateWindow {
     google.protobuf.Timestamp start = 1;
     google.protobuf.Timestamp stop = 2;
     double value = 3;
+    string device = 4;
   }
   repeated AggregateWindow aggregate_windows = 1;
+  ResponseMetadata metadata = 2;
+}
+
+message DeleteForTimeSpanRequest {
+  google.protobuf.Timestamp start_time = 1;
+  google.protobuf.Timestamp stop_time = 2;
+  string device = 3;
+}
+
+message DeleteForTimeSpanResponse {
   ResponseMetadata metadata = 2;
 }

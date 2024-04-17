@@ -7,7 +7,7 @@ namespace app.Services;
 /// <summary>
 /// Thread-safe InfluxDB client - https://github.com/influxdata/influxdb-client-csharp.
 /// </summary>
-public class InfluxDBService
+public class InfluxDBApiFactoryService
 {
 
     private readonly string _url;
@@ -17,9 +17,11 @@ public class InfluxDBService
 
     private readonly string _defaultBucket;
 
+    public string DefaultOrganization => _defaultOrganization;
+
     public string DefaultBucket => _defaultBucket;
 
-    public InfluxDBService(IConfiguration configuration)
+    public InfluxDBApiFactoryService(IConfiguration configuration)
     {
         // Loading configured token and url from configuration files.
         var configFilePath = configuration.GetValue<string>("InfluxDB:ConfigFilePath");
@@ -69,8 +71,8 @@ public class InfluxDBService
             Token = _token,
             Bucket = _defaultBucket,
         });
-        using var write = client.GetWriteApi();
-        action(write);
+        using var writeApi = client.GetWriteApi();
+        action(writeApi);
     }
 
     public async Task<T> QueryAsync<T>(Func<QueryApi, Task<T>> action)
@@ -81,7 +83,19 @@ public class InfluxDBService
             Token = _token,
             Bucket = _defaultBucket,
         });
-        var query = client.GetQueryApi();
-        return await action(query);
+        var queryApi = client.GetQueryApi();
+        return await action(queryApi);
+    }
+
+    public async Task DeleteAsync(Func<DeleteApi, Task> action)
+    {
+        using var client = new InfluxDBClient(new InfluxDBClientOptions(_url)
+        {
+            Org = _defaultOrganization,
+            Token = _token,
+            Bucket = _defaultBucket,
+        });
+        var deleteApi = client.GetDeleteApi();
+        await action(deleteApi);
     }
 }

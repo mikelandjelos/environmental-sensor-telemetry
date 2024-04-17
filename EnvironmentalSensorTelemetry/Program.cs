@@ -11,7 +11,7 @@ builder.Services.AddGrpc().AddServiceOptions<EnvironmentalSensorTelemetryService
 });
 builder.Services.AddGrpcReflection(); // For development purposes (Postman)
 
-builder.Services.AddSingleton<InfluxDBService>(); // For InfluxDBService DI
+builder.Services.AddSingleton<InfluxDBApiFactoryService>(); // For InfluxDBService DI
 builder.Services.AddSingleton<ServerLoggerInterceptor>();
 
 var app = builder.Build();
