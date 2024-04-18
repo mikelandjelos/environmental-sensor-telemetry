@@ -8,7 +8,7 @@ The dataset used for this project can be found on [this](https://www.kaggle.com/
 > 1. Clone this repository using `git clone https://github.com/mikelandjelos/environmental-sensor-telemetry.git`.
 > 2. After cloning, using the command line position yourself inside the repository, where the `docker-compose.yml` is.
 > 3. Run the `docker compose up -d` command (you must have `dockerd` running, and have `docker` CLI tool installed).
-> 4. That's all, the Web client for testing the REST service on http://localhost:\<rest-port> and the gRPC UI Web client should be available on http://localhost:8081.
+> 4. That's all, the Web client for testing the REST service can be found on http://localhost:\<rest-port> and the gRPC UI Web client should be available on http://localhost:8081.
 
 More about the actual implementation and process of setting everything up can be found on the pages listed below:
 
