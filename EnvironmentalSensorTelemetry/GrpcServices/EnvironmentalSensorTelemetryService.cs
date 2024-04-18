@@ -35,7 +35,7 @@ public class EnvironmentalSensorTelemetryService : EnvironmentalSensorTelemetry.
                 Metadata = new ResponseMetadata
                 {
                     Message = pingResponseSuccess ? "InfluxDB pinged successfully!" : "InfluxDB ping failed!",
-                    StatusCode = (int)HttpStatusCode.OK,
+                    StatusCode = pingResponseSuccess ? (int)HttpStatusCode.OK : (int)HttpStatusCode.NotFound,
                 }
             };
         }
@@ -105,7 +105,7 @@ public class EnvironmentalSensorTelemetryService : EnvironmentalSensorTelemetry.
         {
             _influxDBService.Write(async writeApi =>
             {
-                while (await requestStream.MoveNext())
+                while (!context.CancellationToken.IsCancellationRequested && await requestStream.MoveNext())
                 {
                     var estData = requestStream.Current;
                     writeApi.WriteMeasurement(new SensorData

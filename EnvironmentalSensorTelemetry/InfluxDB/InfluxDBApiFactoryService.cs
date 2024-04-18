@@ -1,6 +1,5 @@
 using System.Configuration;
 using InfluxDB.Client;
-using Tommy;
 
 namespace app.Services;
 
@@ -10,8 +9,10 @@ namespace app.Services;
 public class InfluxDBApiFactoryService
 {
 
-    private readonly string _url;
-    private readonly string _token;
+    private readonly ILogger<InfluxDBApiFactoryService> _logger;
+
+    private readonly string? _url;
+    private readonly string? _token;
 
     private readonly string _defaultOrganization;
 
@@ -21,23 +22,24 @@ public class InfluxDBApiFactoryService
 
     public string DefaultBucket => _defaultBucket;
 
-    public InfluxDBApiFactoryService(IConfiguration configuration)
+    public InfluxDBApiFactoryService(IConfiguration configuration, ILogger<InfluxDBApiFactoryService> logger)
     {
-        // Loading configured token and url from configuration files.
-        var configFilePath = configuration.GetValue<string>("InfluxDB:ConfigFilePath");
+        _logger = logger;
 
-        if (string.IsNullOrEmpty(configFilePath))
-            throw new ConfigurationErrorsException("InfluxDB:ConfigFilePath missing from appsettings.json");
+        var token_secret_file = Environment.GetEnvironmentVariable("INFLUXDB_TOKEN_FILE");
 
-        using (StreamReader reader = File.OpenText(configFilePath))
-        {
-            TomlTable influxConfigs = TOML.Parse(reader);
-            _token = influxConfigs["default"]["token"].AsString;
-            _url = influxConfigs["default"]["url"].AsString;
-        }
+        if (string.IsNullOrEmpty(token_secret_file))
+            throw new ConfigurationErrorsException("INFLUXDB_TOKEN_FILE environment variable not set!");
 
-        if (string.IsNullOrEmpty(_token))
-            throw new ConfigurationErrorsException("default:token missing or empty in the influx-configs");
+        _token = File.ReadAllText(token_secret_file);
+
+        _logger.LogCritical(_token);
+        
+        _url = Environment.GetEnvironmentVariable("INFLUXDB_URL");
+        _logger.LogCritical(_url);
+
+        if (string.IsNullOrEmpty(_url))
+            throw new ConfigurationErrorsException("INFLUX_URL environment variable not set!");
 
         // Loading default organization and bucket from configuration files.
 

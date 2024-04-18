@@ -16,6 +16,8 @@ builder.Services.AddSingleton<ServerLoggerInterceptor>();
 
 var app = builder.Build();
 
+app.Logger.LogCritical($"Environment mode: {Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")}");
+
 if (app.Environment.IsDevelopment())
     app.MapGrpcReflectionService();
 
