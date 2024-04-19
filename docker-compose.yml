@@ -53,8 +53,13 @@ services:
     environment:
       GRPCUI_SERVER: ${DATA_PROVIDER_SERVER}
     depends_on:
-      - "data-provider"
+      - data-provider
     ports:
       - "8081:8080"
     networks:
       - iots-bridge
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 1s
+        max_attempts: 5
