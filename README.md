@@ -10,8 +10,8 @@ The dataset used for this project can be found on [this](https://www.kaggle.com/
 > 3. Run the `docker compose up -d` command (you must have `dockerd` running, and have `docker` CLI tool installed).
 > 4. That's all:
 >       1. InfluxDB Web client can be found on http://localhost:8086 - user `mihajlo`, pass `iotsiotsiots`;
->       2. Web client for testing the REST service can be found on http://localhost:8084 (TBA);
->       3. Web client for testing the gRPC service can be found on on http://localhost:8081.
+>       2. Web client for testing the gRPC service can be found on on http://localhost:8081.
+>       3. Web client for testing the REST service can be found on http://localhost:8084 (TBA);
 > 5. For cleanup (stoping and removing all containers), simply run the `docker compose down` command.
 
 More about the actual implementation and process of setting everything up can be found on the pages listed below:
