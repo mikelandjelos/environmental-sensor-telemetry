@@ -7,6 +7,11 @@ secrets:
     file: ./secrets/influx_token
 
 services:
+
+  # ---------------------------------------------------------------------------------------------------------
+  # DATABASE SERVICE - InfluxDB2
+  # ---------------------------------------------------------------------------------------------------------
+
   iots-influxdb:
     image: influxdb:2
     container_name: iots-influxdb
@@ -29,6 +34,10 @@ services:
       - iots-bridge
     secrets:
       - influx-token
+
+  # ---------------------------------------------------------------------------------------------------------
+  # DATA PROVIDER SERVICE - gRPC server written in .NET Core, and gRPC UI sidecar for testing endpoints
+  # ---------------------------------------------------------------------------------------------------------
 
   data-provider:
     build:
@@ -63,3 +72,20 @@ services:
         condition: on-failure
         delay: 1s
         max_attempts: 5
+
+  # ---------------------------------------------------------------------------------------------------------
+  # DATA EXPLORER SERVICE - RESTful Web service
+  # --------------------------------------------------------------------------------------------------------- 
+
+  data-explorer:
+    build:
+      context: ./data-explorer/data-explorer
+      dockerfile: Dockerfile
+      no_cache: true
+    container_name: data-explorer
+    ports:
+      - "5000:5000"
+    environment:
+      - GRPC_SERVER_ADDRESS=${DATA_PROVIDER_SERVER}
+    networks:
+      - iots-bridge

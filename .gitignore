@@ -4,3 +4,5 @@ influx/.~lock*
 
 !influx/influxdb2-config/dummy.txt
 !influx/influxdb2-data/dummy.txt
+
+data-explorer/venv/*

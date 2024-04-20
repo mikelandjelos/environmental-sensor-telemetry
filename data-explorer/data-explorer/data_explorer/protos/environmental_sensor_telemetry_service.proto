@@ -1,0 +1,135 @@
+syntax = "proto3";
+package environmental_sensor_telemetry;
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/duration.proto";
+
+// The greeting service definition.
+service EnvironmentalSensorTelemetry {
+  // If all is well, returns "Pong!" string as a response.
+  rpc Ping (google.protobuf.Empty) returns (PingResponse);
+
+  // Batch write.
+  rpc WriteMeasurementsBatched(WriteBatchRequest) returns (WriteDataResponse);
+  
+  // Stream write.
+  rpc WriteMeasurementsStream(stream EnvironmentalSensorTelemetryData) returns (stream WriteDataResponse);
+
+  // Read measurements over time span.
+  rpc ReadMeasurementsOverTimeSpan(ReadMeasurementsOverTimeSpanRequest) returns (ReadMeasurementsOverTimeSpanResponse);
+
+  // Read singular fields over time span.
+  rpc ReadFieldsOverTimeSpan(ReadFieldsOverTimeSpanRequest) returns (ReadFieldsOverTimeSpanResponse);
+
+  // Aggregate values over multiple periods.
+  rpc AggregateOverTimeSpan(AggregateOverTimeSpanRequest) returns (AggregateOverTimeSpanResponse);
+
+  // Delete points over a timespan.
+  rpc DeleteForTimeSpan(DeleteForTimeSpanRequest) returns (DeleteForTimeSpanResponse);
+}
+
+// Auxiliary types
+
+message EnvironmentalSensorTelemetryData {
+  google.protobuf.Timestamp timestamp = 1;
+  string device = 2;
+  double carbon_oxide = 3;
+  double humidity = 4;
+  bool light = 5;
+  double liquid_petroleum_gas = 6;
+  bool motion = 7;
+  double smoke = 8;
+  double temperature = 9;
+}
+
+message FluxRecordCompact {
+  string field_name = 1;
+  google.protobuf.Timestamp timestamp = 2;
+  google.protobuf.Value value = 3;
+}
+
+message ResponseMetadata {
+  int32 status_code = 1;
+  string message = 2;
+}
+
+message PaginationInfo {
+  int32 page_size = 4;
+  int32 offset = 5;
+}
+
+enum AggregationType {
+  NIL = 0;
+  MIN = 1;
+  MAX = 2;
+  MEAN = 3;
+  SUM = 4;
+}
+
+message PingResponse {
+  string pong = 1;
+  ResponseMetadata metadata = 2;
+}
+
+message WriteBatchRequest {
+  repeated EnvironmentalSensorTelemetryData data = 1;
+}
+
+message WriteDataResponse {
+  google.protobuf.Timestamp written_at = 1;
+  ResponseMetadata metadata = 2;
+}
+
+message ReadMeasurementsOverTimeSpanRequest {
+  google.protobuf.Timestamp start_time = 1;
+  optional google.protobuf.Timestamp stop_time = 2;
+  optional PaginationInfo pagination_info = 3;
+}
+
+message ReadMeasurementsOverTimeSpanResponse {
+  repeated EnvironmentalSensorTelemetryData records = 1;
+  ResponseMetadata metadata = 2;
+}
+
+message ReadFieldsOverTimeSpanRequest {
+  google.protobuf.Timestamp start_time = 1;
+  optional google.protobuf.Timestamp stop_time = 2;
+  optional PaginationInfo pagination_info = 3;
+  optional string field_name = 4;
+}
+
+message ReadFieldsOverTimeSpanResponse {
+  repeated FluxRecordCompact records = 1;
+  ResponseMetadata metadata = 2;
+}
+
+message AggregateOverTimeSpanRequest {
+  google.protobuf.Timestamp start_time = 1;
+  google.protobuf.Timestamp stop_time = 2;
+  string field_name = 3;
+  google.protobuf.Duration window_duration = 4;
+  AggregationType aggregation_type = 5;
+}
+
+message AggregateOverTimeSpanResponse {
+  message AggregateWindow {
+    google.protobuf.Timestamp start = 1;
+    google.protobuf.Timestamp stop = 2;
+    double value = 3;
+    string device = 4;
+  }
+  repeated AggregateWindow aggregate_windows = 1;
+  ResponseMetadata metadata = 2;
+}
+
+message DeleteForTimeSpanRequest {
+  google.protobuf.Timestamp start_time = 1;
+  google.protobuf.Timestamp stop_time = 2;
+  string device = 3;
+}
+
+message DeleteForTimeSpanResponse {
+  ResponseMetadata metadata = 2;
+}
