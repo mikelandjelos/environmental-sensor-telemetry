@@ -20,6 +20,6 @@ The dataset used for this project can be found on [this](https://www.kaggle.com/
 
 More about the actual implementation and process of setting everything up can be found on the pages listed below:
 
-1. [Setting up InfluxDB](./influx/Setting%20up%20InfluxDB.md) - read about setting up InfluxDB within a Docker container.
-2. [Setting up Data provider - gRPC server](./EnvironmentalSensorTelemetry/Setting%20up%20Data%20provider.md) - read about setting up data provider gRPC server written in .NET Core, with a gRPCui sidecar.
+1. [Setting up InfluxDB](./influx/README.md) - read about setting up InfluxDB within a Docker container.
+2. [Setting up Data provider - gRPC server](./EnvironmentalSensorTelemetry/README.md) - read about setting up data provider gRPC server written in .NET Core, with a gRPCui sidecar.
 3. [Setting up RESTful wrapper](./data-explorer/data-explorer/README.md) - read about setting up a RESTful service, serving as a wrapper around the gRPC server, used for exploring the data through REST endpoints.
